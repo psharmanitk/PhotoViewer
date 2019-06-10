@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.v4.util.LruCache;
 import android.util.Log;
 
@@ -53,10 +54,10 @@ public class BitmapCache extends LruCache<String, Bitmap> {
         return this.get(key);
     }
 
-    public void setBitmapOrDownload(final String key, ImageAdapter.ImageViewHolder holder) {
+    synchronized public void setBitmapOrDownload(final String key, ImageAdapter.ImageViewHolder holder) {
         if (hasBitmap(key)) {
             Log.d(LOG_TAG, "setBitmapOrDownload in hash key is " + key);
-            //iv.setImageView(getBitmap(key));
+            holder.setImageView(getBitmap(key));
         } else {
             Log.d(LOG_TAG, "setBitmapOrDownload not in hash " + holder.getUrl());
             executorService.submit(new PhotoLoader(mContext, holder, key));
@@ -100,6 +101,9 @@ public class BitmapCache extends LruCache<String, Bitmap> {
                     return;
                 put(key, bitmap);
                 BitmapDisplayer bd = new BitmapDisplayer(mContext, holder, bitmap);
+/*                Thread displayThread = new Thread(bd);
+                displayThread.start();*/
+
                 myHandler.post(bd);
             } catch (UnknownHostException e) {
                 Log.d(LOG_TAG, "Unknown host continue");
@@ -116,7 +120,7 @@ public class BitmapCache extends LruCache<String, Bitmap> {
         private Context mContext;
 
         BitmapDisplayer(Context ctx, ImageAdapter.ImageViewHolder holder, Bitmap bitmap) {
-            Log.d(LOG_TAG, "BitmapDisplayer run " + holder.toString());
+            //Log.d(LOG_TAG, "BitmapDisplayer run " + holder.toString());
             this.holder = holder;
             this.bitmap = bitmap;
             this.mContext = ctx;
