@@ -2,6 +2,7 @@ package com.android.imageview.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -41,34 +42,40 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         Log.d(LOG_TAG, " onCreateViewHolder " + i);
         View imageView = mInflater.inflate(resource, viewGroup, false);
         ImageViewHolder imageViewHolder = new ImageViewHolder(imageView, mPhotoUrlList.get(i));
-        //imageViewHolder.setIsRecyclable(true);
+        //imageViewHolder.setIsRecyclable(false);
         return imageViewHolder;
     }
 
     @Override
     public void onBindViewHolder(@NonNull ImageViewHolder imageViewHolder, int position) {
-        Log.d(LOG_TAG, " onBindViewHolder " + imageViewHolder.getUrl());
+        Log.d("priya", " onBindViewHolder postion "+ position + " " + imageViewHolder.getUrl());
         imageViewHolder.setUrl(mPhotoUrlList.get(position));
+        Bitmap bitmap = (Bitmap) BitmapFactory.decodeResource(mContext.getResources(), R.drawable.loading);
+        imageViewHolder.setImageView(bitmap);
         cache.setBitmapOrDownload( mPhotoUrlList.get(position).toString(), imageViewHolder);
     }
 
     @Override
     public int getItemCount() {
-        Log.d("priya", "getItemCount");
+        Log.d(LOG_TAG, "getItemCount");
         int size = mPhotoUrlList.size();
         //int size = mPhotoObjectList.size( );
         //Log.d(LOG_TAG, " getItemCount " + size);
         return size;
     }
 
-    synchronized public void addItems(List<URL> list) {
+    public void addItems(List<URL> list) {
         Log.d(LOG_TAG, "addItems "+ list.toString());
         //mPhotoObjectList.addAll(list);
         mPhotoUrlList.addAll(list);
         notifyDataSetChanged();
-        notifyAll();
     }
-
+    public void clearAll(){
+        Log.d(LOG_TAG, "clearAll ");
+        int count = mPhotoUrlList.size();
+        mPhotoUrlList.removeAll(mPhotoUrlList);
+        notifyItemRangeChanged(0, count);
+    }
     public class ImageViewHolder extends RecyclerView.ViewHolder {
         private ImageView imageView;
         private URL url;

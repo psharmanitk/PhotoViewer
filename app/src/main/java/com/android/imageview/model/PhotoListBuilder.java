@@ -1,7 +1,6 @@
 package com.android.imageview.model;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
@@ -18,8 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class PhotoListBuilder {
@@ -43,19 +42,6 @@ public class PhotoListBuilder {
         this.mPhotoObjectList = new ArrayList<>();
         lastPageLoaded = 0;
     }
-    Handler myHandler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(Message msg) {
-
-            return false;
-        }
-    });
-/*    public static PhotoListBuilder getInstance() {
-        if (myObject == null) {
-            myObject = new PhotoListBuilder();
-        }
-        return myObject;
-    }*/
 
     public void loadObjects() {
         lastPageLoaded++;
@@ -115,6 +101,8 @@ public class PhotoListBuilder {
                 }
             } catch (JSONException e) {
                 Log.e(LOG_TAG, "Error: " + e.toString());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
             loadNextBitmaps();
         }
@@ -122,48 +110,15 @@ public class PhotoListBuilder {
 
     public void loadNextBitmaps() {
         Log.d(LOG_TAG, " loadNextBitmaps " + lastPageLoaded);
-        LoadBitMaps loadBitMapsTask = new LoadBitMaps();
-        loadBitMapsTask.execute();
-    }
-
-    public class LoadBitMaps extends AsyncTask<String, Void, ArrayList<URL>> {
-
-        @Override
-        protected ArrayList<URL> doInBackground(String... strings) {
-            ArrayList<URL> newList = new ArrayList<URL>();
-            //ArrayList<URL> newList = new ArrayList<URL>();
-            for (int i = 0; i < mPhotoObjectList.size(); i++) {
-                /*try {
-                    HttpURLConnection con = (HttpURLConnection) mPhotoObjectList.get(i).getPhotoUrl().openConnection();
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.RGB_565;
-                    //options.inSampleSize = 2;
-                    options.inScaled = true;
-                    Bitmap bitmap = BitmapFactory.decodeStream(con.getInputStream(), null, options);
-                    //Bitmap bitmap = BitmapFactory.decodeStream(con.getInputStream());
-                    mPhotoObjectList.get(i).setBitmap(bitmap);
-                    if(bitmap == null)
-                        continue;*/
-                    newList.add(mPhotoObjectList.get(i).getPhotoUrl());
-                /*} catch (UnknownHostException e) {
-                    Log.d(LOG_TAG, "Unknown host continue");
-                    continue;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-            }
-            Log.d(LOG_TAG, "Load Bit Maps loadStartCount " + newList.size());
-            return newList;
+        ArrayList<URL> newList = new ArrayList<URL>();
+        //ArrayList<URL> newList = new ArrayList<URL>();
+        for (int i = 0; i < mPhotoObjectList.size(); i++) {
+            newList.add(mPhotoObjectList.get(i).getPhotoUrl());
         }
-
-        @Override
-        protected void onPostExecute(ArrayList<URL> list) {
-            boolean moreDataAvailable = true;
-            if(totalPages == lastPageLoaded)
-                moreDataAvailable = false;
-            Log.d(LOG_TAG, "LoadBitMaps onPostExecute list is " + list.toString() + " lastPageLoaded " +  lastPageLoaded);
-            callback.loaded(list, moreDataAvailable);
-            super.onPostExecute(list);
-        }
+        boolean moreDataAvailable = true;
+        if(totalPages == lastPageLoaded)
+            moreDataAvailable = false;
+        Log.d(LOG_TAG, "LoadBitMaps onPostExecute list is " + newList.toString() + " lastPageLoaded " +  lastPageLoaded);
+        callback.loaded(newList, moreDataAvailable);
     }
 }

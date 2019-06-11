@@ -17,13 +17,6 @@ public class PhotoObject {
     String secret;
     URL photoUrl;
     Bitmap bitmap;
-    public Bitmap getBitmap() {
-        return bitmap;
-    }
-
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
-    }
 
     public void setFarm(String farm) {
         this.farm = farm;
@@ -41,20 +34,10 @@ public class PhotoObject {
         this.secret = secret;
     }
 
-    public PhotoObject() {
-        this.farm = farm;
-        this.server = server;
-        this.id = id;
-        this.secret = secret;
-    }
 
     //http://farm{farm}.static.flickr.com/{server}/{id}_{secret}.jpg
-    public void setPhotoUrl() {
-        try {
-            this.photoUrl = new URL("https://farm" + farm + ".static.flickr.com/" + server + "/" + id + "_" + secret + ".jpg");
-        } catch (MalformedURLException e) {
-            Log.d("PhotoObject", "exception "+e.toString());
-        }
+    public void setPhotoUrl() throws MalformedURLException {
+        this.photoUrl = new URL("https://farm" + farm + ".static.flickr.com/" + server + "/" + id + "_" + secret + ".jpg");
     }
 
     public URL getPhotoUrl() {

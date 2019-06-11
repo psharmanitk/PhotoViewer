@@ -51,9 +51,8 @@
             android:numColumns="auto_fit"
             android:horizontalSpacing="5dp"
             android:stretchMode="columnWidth"
-            android:verticalSpacing="5dp"
             android:scrollbars="vertical"
-            android:scrollbarStyle="insideOverlay">
+            android:scrollbarStyle="outsideInset">
         </android.support.v7.widget.RecyclerView>
     </FrameLayout>
 

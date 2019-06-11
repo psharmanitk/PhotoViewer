@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
     private BitmapCache cache = null;
     private boolean loading;
     private Context mContext;
-
+    private int mStatePos, topOffset;
     private static String LOG_TAG = "PhotoViewer/MainActivity";
 
 
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
             public void onClick(View v) {
                 Editable inputText = userInput.getText();
                 infiniteScroll.setDataAvailable(true);
-                cache.clearCache();
+                myAdapter.clearAll();
                 photoBuilder = new PhotoListBuilder(inputText.toString(), MainActivity.this, myAdapter);
                 photoBuilder.loadObjects();
                 moreLoadingBar.setVisibility(View.VISIBLE);
@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
         gridView.setVisibility(View.GONE);
         gridView.setLayoutManager(new GridLayoutManager(mContext, 3));
         ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null) {
+        if (actionBar != null) {
             Log.d(LOG_TAG, "action bar not null");
             actionBar.setHomeButtonEnabled(true);
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
         loading = false;
         cache = new BitmapCache(mContext, BitmapCache.getCacheSize(), this);
         myAdapter = new ImageAdapter(this, R.layout.item_layout, null, cache);
+        myAdapter.setHasStableIds(true);
         gridView.setAdapter(myAdapter);
     }
 
@@ -89,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
     protected void onPause() {
         super.onPause();
     }
+
     public void hideKeyboard() {
         InputMethodManager imm = (InputMethodManager) this.getSystemService(Activity.INPUT_METHOD_SERVICE);
         //Find the currently focused view, so we can grab the correct window token from it.
@@ -99,9 +101,10 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
         }
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
+
     @Override
     public void loaded(List<URL> list, boolean moreDataAvailable) {
-        Log.d(LOG_TAG, "loaded list size is "+ list.toString() +" moreDataAvailable "+ moreDataAvailable);
+        Log.d(LOG_TAG, "loaded list size is " + list.toString() + " moreDataAvailable " + moreDataAvailable);
         //ImageAdapter myAdapter = new ImageAdapter(this, 0, list);
         infiniteScroll.setDataAvailable(moreDataAvailable);
         loading = false;
@@ -109,22 +112,14 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
         myAdapter.addItems(list);
         mProgressBar.setVisibility(View.GONE);
         gridView.setVisibility(View.VISIBLE);
-        if (savedState != null) {
-            gridView.getLayoutManager().onRestoreInstanceState(savedState);
-        }
+        LinearLayoutManager manager = (LinearLayoutManager) gridView.getLayoutManager();
+        manager.scrollToPositionWithOffset(mStatePos, (int) topOffset);
         moreLoadingBar.setVisibility(View.GONE);
     }
 
     @Override
-    synchronized public void bitmapLoaded(int index) {
-/*        Log.d("priya", "bitmap loaded for index " + index);
-        myAdapter.notifyItemChanged(index);*/
-    }
-
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
+        switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
             default:
@@ -133,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
         return super.onOptionsItemSelected(item);
     }
 
-    class InfiniteScroll extends RecyclerView.OnScrollListener{
+    class InfiniteScroll extends RecyclerView.OnScrollListener {
         private int prevLastItemIndex = 0;
         private boolean isDataAvailable = false;
         /**
@@ -144,17 +139,18 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
          * True if we are still waiting for the last set of data to load.
          */
         private boolean mLoading = true;
+
         @Override
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
             int visibleItemCount = recyclerView.getChildCount();
             int totalItemCount = recyclerView.getLayoutManager().getItemCount();
             int firstVisibleItem = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
-            Log.d(LOG_TAG, " onScrolled dx and dy are "+ dx + " " + dy);
-            Log.d(LOG_TAG, " firstVisibleItem visibleItemCount and totalItemCount are "+ firstVisibleItem + " " + visibleItemCount + " "+totalItemCount);
+            Log.d(LOG_TAG, " onScrolled dx and dy are " + dx + " " + dy);
+            Log.d(LOG_TAG, " firstVisibleItem visibleItemCount and totalItemCount are " + firstVisibleItem + " " + visibleItemCount + " " + totalItemCount);
             if (mLoading) {
                 if (totalItemCount > mPreviousTotal) {
-                    Log.d(LOG_TAG, " onScrolled dx and dy are "+ mLoading + mPreviousTotal);
+                    Log.d(LOG_TAG, " onScrolled dx and dy are " + mLoading + mPreviousTotal);
                     mLoading = false;
                     mPreviousTotal = totalItemCount;
                 }
@@ -162,29 +158,27 @@ public class MainActivity extends AppCompatActivity implements LoadDataCallback 
             int visibleThreshold = 5;
             if (!mLoading && (totalItemCount - visibleItemCount)
                     <= (firstVisibleItem + visibleThreshold)) {
+                Log.d("priya", "load new ");
                 // End has been reached
+                LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                mStatePos = manager.findFirstVisibleItemPosition();
+                View firstItemView = manager.findViewByPosition(mStatePos);
+                topOffset = firstItemView.getTop();
                 moreLoadingBar.setVisibility(View.VISIBLE);
                 savedState = recyclerView.getLayoutManager().onSaveInstanceState();
                 photoBuilder.loadObjects();
                 mLoading = true;
             }
         }
-/* @Override
-        public void onScroll(AbsListView absListView, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-            Log.d(LOG_TAG, "onScroll firstVisibleItem "+ firstVisibleItem +" visibleItemCount " + " totalItemCount "+ totalItemCount);
-            if (gridView.getLastVisiblePosition() + 1 == totalItemCount && !loading) {
-                loading = true;
-                if (isDataAvailable) {
-                    Log.d(LOG_TAG, "onScroll Data Available");
-                    photoBuilder.loadNextBitmaps();
-                }
-            } else {
-                loading = false;
-            }
-        }*/
+
+        @Override
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+            Log.d("priya", " onScrollStateChanged ");
+        }
 
         public void setDataAvailable(boolean dataAvailable) {
-            Log.d(LOG_TAG, "Infinite Scroll setDataAvailable "+dataAvailable);
+            Log.d(LOG_TAG, "Infinite Scroll setDataAvailable " + dataAvailable);
             isDataAvailable = dataAvailable;
         }
     }

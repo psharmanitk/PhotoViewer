@@ -27,16 +27,10 @@ public class BitmapCache extends LruCache<String, Bitmap> {
     Handler myHandler = new Handler(Looper.getMainLooper());
     LoadDataCallback dataCallback;
 
-    public BitmapCache(Context mContext, int maxSize, ImageAdapter adapterHandle) {
-        super(maxSize);
-        this.mContext = mContext;
-        this.adapterHandle = adapterHandle;
-        executorService = Executors.newFixedThreadPool(5);
-    }
     public BitmapCache(Context mContext, int maxSize, LoadDataCallback dataCallback) {
         super(maxSize);
         this.mContext = mContext;
-        executorService = Executors.newFixedThreadPool(5);
+        executorService = Executors.newFixedThreadPool(12);
         this.dataCallback = dataCallback;
     }
     public static int getCacheSize() {
@@ -54,10 +48,15 @@ public class BitmapCache extends LruCache<String, Bitmap> {
         return this.get(key);
     }
 
-    synchronized public void setBitmapOrDownload(final String key, ImageAdapter.ImageViewHolder holder) {
+    public void setBitmapOrDownload(final String key, ImageAdapter.ImageViewHolder holder) {
         if (hasBitmap(key)) {
-            Log.d(LOG_TAG, "setBitmapOrDownload in hash key is " + key);
-            holder.setImageView(getBitmap(key));
+            Log.d(LOG_TAG, "setBitmapOrDownload in hash key is and size is " + key + "width :" + getBitmap(key).getWidth() + " height :"+ getBitmap(key).getHeight());
+            if(getBitmap(key) != null)
+                holder.setImageView(getBitmap(key));
+            else {
+                Bitmap bitmap = (Bitmap) BitmapFactory.decodeResource(mContext.getResources(), R.drawable.ic_launcher_background);
+                holder.setImageView(bitmap);
+            }
         } else {
             Log.d(LOG_TAG, "setBitmapOrDownload not in hash " + holder.getUrl());
             executorService.submit(new PhotoLoader(mContext, holder, key));
@@ -67,10 +66,6 @@ public class BitmapCache extends LruCache<String, Bitmap> {
 
     public boolean hasBitmap(String key) {
         return getBitmap(key) != null;
-    }
-
-    public void clearCache() {
-
     }
 
     class PhotoLoader implements Runnable {
@@ -103,7 +98,6 @@ public class BitmapCache extends LruCache<String, Bitmap> {
                 BitmapDisplayer bd = new BitmapDisplayer(mContext, holder, bitmap);
 /*                Thread displayThread = new Thread(bd);
                 displayThread.start();*/
-
                 myHandler.post(bd);
             } catch (UnknownHostException e) {
                 Log.d(LOG_TAG, "Unknown host continue");
@@ -134,7 +128,6 @@ public class BitmapCache extends LruCache<String, Bitmap> {
                 holder.setImageView(bitmap);
             } else
                 holder.setImageView(bitmap);
-            dataCallback.bitmapLoaded(holder.getLayoutPosition());
             Log.d("priya", "holder updated of index "+ holder.getLayoutPosition());
         }
     }
