@@ -41,5 +41,5 @@ This module contains the model which represent the files that interact with the 
 
 MAINTAINERS
 -----------
-priyankasharma.nitk@gmail.com
+ psharmanitk
 
