@@ -39,5 +39,7 @@ This module contains the model which represent the files that interact with the 
  * ImageAdapter: To set View Holder for RecyclerView and set the image from list of URls.
 
 
-
+MAINTAINERS
+-----------
+priyankasharma.nitk@gmail.com
 
